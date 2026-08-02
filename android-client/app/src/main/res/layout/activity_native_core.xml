@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical"
+    android:padding="5dp">
+
+    <TextView
+        android:id="@+id/core_connection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="● PocketBridge"
+        android:textColor="@color/status_warn"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/core_active"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="Підключення…"
+        android:textColor="@color/text_secondary"
+        android:textSize="10sp" />
+
+    <Spinner
+        android:id="@+id/core_profile_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:layout_marginTop="3dp"
+        android:background="@drawable/edit_background"
+        android:prompt="Профіль" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="4dp">
+
+        <FrameLayout
+            android:id="@+id/core_panel_page"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <TextView
+                android:id="@+id/core_empty_profile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="У профілі немає доступних кнопок"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <Button android:id="@+id/core_action_1" style="@style/CoreActionButton" />
+                    <Button android:id="@+id/core_action_2" style="@style/CoreActionButton" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <Button android:id="@+id/core_action_3" style="@style/CoreActionButton" />
+                    <Button android:id="@+id/core_action_4" style="@style/CoreActionButton" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <Button android:id="@+id/core_action_5" style="@style/CoreActionButton" />
+                    <Button android:id="@+id/core_action_6" style="@style/CoreActionButton" />
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/core_touch_page"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <View
+                android:id="@+id/core_touch_surface"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:background="@drawable/touchpad_background" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/core_left_click"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/button_secondary"
+                    android:text="ЛКМ"
+                    android:textColor="@color/text_primary" />
+                <Button
+                    android:id="@+id/core_double_click"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/button_primary"
+                    android:text="2×"
+                    android:textColor="@color/text_primary" />
+                <Button
+                    android:id="@+id/core_right_click"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/button_secondary"
+                    android:text="ПКМ"
+                    android:textColor="@color/text_primary" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="43dp"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/core_scroll_up"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/button_secondary"
+                    android:text="Скрол ↑"
+                    android:textColor="@color/text_primary" />
+                <Button
+                    android:id="@+id/core_scroll_down"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/button_secondary"
+                    android:text="Скрол ↓"
+                    android:textColor="@color/text_primary" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/core_keys_page"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal">
+                <EditText
+                    android:id="@+id/core_text_input"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/edit_background"
+                    android:hint="Текст на ПК"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:maxLength="256"
+                    android:singleLine="true"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="#738398" />
+                <Button
+                    android:id="@+id/core_send_text"
+                    android:layout_width="72dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/button_primary"
+                    android:text="Надіслати"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+                <Button android:id="@+id/core_key_escape" style="@style/CoreKey" android:text="Esc" />
+                <Button android:id="@+id/core_key_tab" style="@style/CoreKey" android:text="Tab" />
+                <Button android:id="@+id/core_key_enter" style="@style/CoreKeyPrimary" android:text="Enter" />
+                <Button android:id="@+id/core_key_backspace" style="@style/CoreKey" android:text="⌫" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+                <Button android:id="@+id/core_key_left" style="@style/CoreKey" android:text="←" />
+                <Button android:id="@+id/core_key_up" style="@style/CoreKey" android:text="↑" />
+                <Button android:id="@+id/core_key_down" style="@style/CoreKey" android:text="↓" />
+                <Button android:id="@+id/core_key_right" style="@style/CoreKey" android:text="→" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+                <Button android:id="@+id/core_key_ctrl_c" style="@style/CoreKey" android:text="Ctrl+C" />
+                <Button android:id="@+id/core_key_ctrl_v" style="@style/CoreKey" android:text="Ctrl+V" />
+                <Button android:id="@+id/core_key_ctrl_z" style="@style/CoreKey" android:text="Ctrl+Z" />
+                <Button android:id="@+id/core_key_alt_f4" style="@style/CoreKeyDanger" android:text="Alt+F4" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/core_more_page"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+                <Button android:id="@+id/core_web_tools" style="@style/CoreMoreButtonPrimary" android:text="Вебінструменти" />
+                <Button android:id="@+id/core_wake" style="@style/CoreMoreButton" android:text="Wake-on-LAN" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+                <Button android:id="@+id/core_backup_remote" style="@style/CoreMoreButton" android:text="Резервний пульт" />
+                <Button android:id="@+id/core_refresh" style="@style/CoreMoreButton" android:text="Оновити профілі" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+                <Button android:id="@+id/core_settings" style="@style/CoreMoreButtonPrimary" android:text="Налаштування" />
+                <Button android:id="@+id/core_diagnostics" style="@style/CoreMoreButton" android:text="Діагностика" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/core_command_status"
+        android:layout_width="match_parent"
+        android:layout_height="18dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="Готово"
+        android:textColor="@color/text_secondary"
+        android:textSize="9sp" />
+
+    <TextView
+        android:id="@+id/core_perf"
+        android:layout_width="match_parent"
+        android:layout_height="15dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="Native Core"
+        android:textColor="#738398"
+        android:textSize="8sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:orientation="horizontal">
+        <Button android:id="@+id/core_nav_panel" style="@style/CoreNavButton" android:text="ПАНЕЛЬ" />
+        <Button android:id="@+id/core_nav_touch" style="@style/CoreNavButton" android:text="ТАЧ" />
+        <Button android:id="@+id/core_nav_keys" style="@style/CoreNavButton" android:text="КЛАВ." />
+        <Button android:id="@+id/core_nav_more" style="@style/CoreNavButton" android:text="ЩЕ" />
+    </LinearLayout>
+</LinearLayout>
