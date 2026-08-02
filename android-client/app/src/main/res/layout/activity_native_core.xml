@@ -86,6 +86,64 @@
             </LinearLayout>
         </FrameLayout>
 
+
+        <LinearLayout
+            android:id="@+id/core_youtube_page"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="45dp"
+                android:orientation="horizontal">
+                <EditText
+                    android:id="@+id/core_youtube_search"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_margin="2dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/edit_background"
+                    android:hint="Пошук YouTube"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLength="180"
+                    android:singleLine="true"
+                    android:textColor="@color/text_primary"
+                    android:textColorHint="#738398" />
+                <Button
+                    android:id="@+id/core_youtube_search_button"
+                    style="@style/CoreYouTubeButtonPrimary"
+                    android:layout_width="72dp"
+                    android:text="Знайти" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+                <Button android:id="@+id/core_youtube_open" style="@style/CoreYouTubeButtonPrimary" android:text="Відкрити" />
+                <Button android:id="@+id/core_youtube_focus" style="@style/CoreYouTubeButton" android:text="Активувати" />
+                <Button android:id="@+id/core_youtube_fullscreen" style="@style/CoreYouTubeButton" android:text="Повний екран" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+                <Button android:id="@+id/core_youtube_previous" style="@style/CoreYouTubeButton" android:text="Попереднє" />
+                <Button android:id="@+id/core_youtube_play" style="@style/CoreYouTubeButtonPrimary" android:text="Play / Pause" />
+                <Button android:id="@+id/core_youtube_next" style="@style/CoreYouTubeButton" android:text="Наступне" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+                <Button android:id="@+id/core_youtube_back" style="@style/CoreYouTubeButton" android:text="−10 с" />
+                <Button android:id="@+id/core_youtube_mute" style="@style/CoreYouTubeButton" android:text="Без звуку" />
+                <Button android:id="@+id/core_youtube_forward" style="@style/CoreYouTubeButton" android:text="+10 с" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+                <Button android:id="@+id/core_youtube_volume_down" style="@style/CoreYouTubeButton" android:text="Гучність −" />
+                <Button android:id="@+id/core_youtube_captions" style="@style/CoreYouTubeButton" android:text="Субтитри" />
+                <Button android:id="@+id/core_youtube_volume_up" style="@style/CoreYouTubeButton" android:text="Гучність +" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+                <Button android:id="@+id/core_youtube_speed_down" style="@style/CoreYouTubeButton" android:text="Швидкість −" />
+                <Button android:id="@+id/core_youtube_theater" style="@style/CoreYouTubeButton" android:text="Театр" />
+                <Button android:id="@+id/core_youtube_speed_up" style="@style/CoreYouTubeButton" android:text="Швидкість +" />
+            </LinearLayout>
+        </LinearLayout>
+
         <LinearLayout
             android:id="@+id/core_touch_page"
             android:layout_width="match_parent"
@@ -288,6 +346,7 @@
         android:layout_height="45dp"
         android:orientation="horizontal">
         <Button android:id="@+id/core_nav_panel" style="@style/CoreNavButton" android:text="ПАНЕЛЬ" />
+        <Button android:id="@+id/core_nav_youtube" style="@style/CoreNavButtonYoutube" android:text="YT" />
         <Button android:id="@+id/core_nav_touch" style="@style/CoreNavButton" android:text="ТАЧ" />
         <Button android:id="@+id/core_nav_keys" style="@style/CoreNavButton" android:text="КЛАВ." />
         <Button android:id="@+id/core_nav_more" style="@style/CoreNavButton" android:text="ЩЕ" />

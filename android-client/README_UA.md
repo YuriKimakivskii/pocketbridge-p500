@@ -1,10 +1,11 @@
-# PocketBridge Remote 1.7.1 для LG P500
+# PocketBridge Remote 1.8.0 для LG P500
 
 Нативний Android-клієнт із підтримкою API 10.
 
 ## Екрани Native Core
 
 - **Панель** — профілі та програмовані кнопки.
+- **YT** — нативна панель YouTube з пошуком і керуванням відтворенням.
 - **Тач** — нативний тачпад, кліки й прокручування.
 - **Клав.** — комбінації клавіш і Unicode-текст.
 - **Ще** — WebView-інструменти, Wake-on-LAN, резервний пульт, налаштування й діагностика.
@@ -22,11 +23,11 @@
 Артефакт GitHub Actions:
 
 ```text
-PocketBridge-Remote-LG-P500-v1.7.1
+PocketBridge-Remote-LG-P500-v1.8.0
 ```
 
 Встановлення:
 
 ```powershell
-adb install -r PocketBridge-Remote-LG-P500-v1.7.1-debug.apk
+adb install -r PocketBridge-Remote-LG-P500-v1.8.0-debug.apk
 ```

@@ -63,11 +63,11 @@ final class AppPreferences {
     }
 
     static String fullPanelUrl(Context context) {
-        return baseUrl(context) + "/#token=" + encode(token(context));
+        return baseUrl(context) + "/?token=" + encode(token(context)) + "&pb_client=android";
     }
 
     static String litePanelUrl(Context context) {
-        return baseUrl(context) + "/p500/#token=" + encode(token(context));
+        return baseUrl(context) + "/p500/?token=" + encode(token(context)) + "&pb_client=android";
     }
 
     static boolean p500LiteMode(Context context) {

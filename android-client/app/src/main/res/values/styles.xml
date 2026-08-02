@@ -49,6 +49,24 @@
         <item name="android:layout_margin">2dp</item>
         <item name="android:background">@drawable/button_secondary</item>
         <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">9sp</item>
+    </style>
+
+    <style name="CoreYouTubeButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">2dp</item>
+        <item name="android:background">@drawable/button_secondary</item>
+        <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">10sp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">2</item>
+    </style>
+    <style name="CoreYouTubeButtonPrimary" parent="@style/CoreYouTubeButton">
+        <item name="android:background">@drawable/button_youtube</item>
+    </style>
+    <style name="CoreNavButtonYoutube" parent="@style/CoreNavButton">
+        <item name="android:background">@drawable/button_youtube</item>
     </style>
 </resources>

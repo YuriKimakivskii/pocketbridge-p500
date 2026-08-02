@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">PocketBridge Remote</string>
-    <string name="app_version_label">PocketBridge Remote v1.7.1</string>
+    <string name="app_version_label">PocketBridge Remote v1.8.0</string>
     <string name="settings_title">Налаштування PocketBridge</string>
     <string name="server_address">IP-адреса або ім’я ПК</string>
     <string name="server_port">HTTP-порт</string>

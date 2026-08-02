@@ -28,9 +28,10 @@ import org.json.JSONObject;
 
 public class NativeCoreActivity extends Activity {
     private static final int PAGE_PANEL = 0;
-    private static final int PAGE_TOUCH = 1;
-    private static final int PAGE_KEYS = 2;
-    private static final int PAGE_MORE = 3;
+    private static final int PAGE_YOUTUBE = 1;
+    private static final int PAGE_TOUCH = 2;
+    private static final int PAGE_KEYS = 3;
+    private static final int PAGE_MORE = 4;
 
     private Handler handler;
     private NativeRequestQueue commandQueue;
@@ -47,11 +48,13 @@ public class NativeCoreActivity extends Activity {
     private final ArrayList<String> profileLabels = new ArrayList<String>();
     private RuntimeTuner runtimeTuner;
     private View panelPage;
+    private View youtubePage;
     private View touchPage;
     private View keysPage;
     private View morePage;
     private View touchSurface;
     private EditText textInput;
+    private EditText youtubeSearchInput;
     private JSONArray profiles = new JSONArray();
     private String profileId = "";
     private String activeConnectionKey = "";
@@ -117,6 +120,7 @@ public class NativeCoreActivity extends Activity {
         bindNavigation();
         bindTouchpad();
         bindKeyboard();
+        bindYouTube();
         bindMore();
         showPage(PAGE_PANEL);
         activeConnectionKey = AppPreferences.baseUrl(this) + "|" + AppPreferences.token(this);
@@ -164,11 +168,13 @@ public class NativeCoreActivity extends Activity {
         profileAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         profileSpinner.setAdapter(profileAdapter);
         panelPage = findViewById(R.id.core_panel_page);
+        youtubePage = findViewById(R.id.core_youtube_page);
         touchPage = findViewById(R.id.core_touch_page);
         keysPage = findViewById(R.id.core_keys_page);
         morePage = findViewById(R.id.core_more_page);
         touchSurface = findViewById(R.id.core_touch_surface);
         textInput = (EditText) findViewById(R.id.core_text_input);
+        youtubeSearchInput = (EditText) findViewById(R.id.core_youtube_search);
         profileSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (loadingProfiles || position < 0 || position >= profiles.length()) return;
@@ -185,6 +191,7 @@ public class NativeCoreActivity extends Activity {
 
     private void bindNavigation() {
         bindPageButton(R.id.core_nav_panel, PAGE_PANEL);
+        bindPageButton(R.id.core_nav_youtube, PAGE_YOUTUBE);
         bindPageButton(R.id.core_nav_touch, PAGE_TOUCH);
         bindPageButton(R.id.core_nav_keys, PAGE_KEYS);
         bindPageButton(R.id.core_nav_more, PAGE_MORE);
@@ -316,6 +323,78 @@ public class NativeCoreActivity extends Activity {
                     textInput.setText("");
                     InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     if (manager != null) manager.hideSoftInputFromWindow(textInput.getWindowToken(), 0);
+                }
+            }
+        });
+    }
+
+
+    private void bindYouTube() {
+        bindYouTubeAction(R.id.core_youtube_open, "youtube_open", "Відкрити YouTube");
+        bindYouTubeAction(R.id.core_youtube_focus, "youtube_focus", "Активувати YouTube");
+        bindYouTubeAction(R.id.core_youtube_fullscreen, "youtube_fullscreen", "Повний екран");
+        bindYouTubeAction(R.id.core_youtube_previous, "youtube_previous", "Попереднє відео");
+        bindYouTubeAction(R.id.core_youtube_play, "youtube_play_pause", "Play / Pause");
+        bindYouTubeAction(R.id.core_youtube_next, "youtube_next", "Наступне відео");
+        bindYouTubeAction(R.id.core_youtube_back, "youtube_seek_back", "Назад 10 секунд");
+        bindYouTubeAction(R.id.core_youtube_mute, "youtube_mute", "Без звуку");
+        bindYouTubeAction(R.id.core_youtube_forward, "youtube_seek_forward", "Вперед 10 секунд");
+        bindYouTubeAction(R.id.core_youtube_volume_down, "youtube_volume_down", "Гучність YouTube −");
+        bindYouTubeAction(R.id.core_youtube_captions, "youtube_captions", "Субтитри");
+        bindYouTubeAction(R.id.core_youtube_volume_up, "youtube_volume_up", "Гучність YouTube +");
+        bindYouTubeAction(R.id.core_youtube_speed_down, "youtube_speed_down", "Швидкість −");
+        bindYouTubeAction(R.id.core_youtube_theater, "youtube_theater", "Театральний режим");
+        bindYouTubeAction(R.id.core_youtube_speed_up, "youtube_speed_up", "Швидкість +");
+        ((Button) findViewById(R.id.core_youtube_search_button)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { searchYouTube(); }
+        });
+        youtubeSearchInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override public boolean onEditorAction(TextView view, int actionId, KeyEvent event) {
+                if (event == null || event.getKeyCode() == KeyEvent.KEYCODE_ENTER) {
+                    searchYouTube();
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void bindYouTubeAction(int id, final String action, final String label) {
+        ((Button) findViewById(id)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                try {
+                    JSONObject target = new JSONObject();
+                    target.put("action", action);
+                    target.put("label", label);
+                    executeTarget(target, false);
+                } catch (Exception exception) {
+                    Toast.makeText(NativeCoreActivity.this, "Некоректна команда YouTube", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void searchYouTube() {
+        String value = youtubeSearchInput.getText().toString().trim();
+        if (value.length() == 0) {
+            Toast.makeText(this, "Введи запит для YouTube", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (value.length() > 180) value = value.substring(0, 180);
+        final String query = value;
+        touchActivity();
+        commandText.setText("Пошук YouTube…");
+        commandQueue.submit(new NativeRequestQueue.Request() {
+            @Override public P500ApiClient.Result run() {
+                return P500ApiClient.youtubeSearch(getApplicationContext(), query);
+            }
+        }, new NativeRequestQueue.Callback() {
+            @Override public void complete(P500ApiClient.Result result) {
+                renderCommandResult(result, "Пошук: " + query);
+                if (result.ok) {
+                    youtubeSearchInput.setText("");
+                    InputMethodManager manager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (manager != null) manager.hideSoftInputFromWindow(youtubeSearchInput.getWindowToken(), 0);
                 }
             }
         });
@@ -641,9 +720,11 @@ public class NativeCoreActivity extends Activity {
 
     private void showPage(int page) {
         panelPage.setVisibility(page == PAGE_PANEL ? View.VISIBLE : View.GONE);
+        youtubePage.setVisibility(page == PAGE_YOUTUBE ? View.VISIBLE : View.GONE);
         touchPage.setVisibility(page == PAGE_TOUCH ? View.VISIBLE : View.GONE);
         keysPage.setVisibility(page == PAGE_KEYS ? View.VISIBLE : View.GONE);
         morePage.setVisibility(page == PAGE_MORE ? View.VISIBLE : View.GONE);
+        profileSpinner.setVisibility(page == PAGE_PANEL ? View.VISIBLE : View.GONE);
         touchActivity();
     }
 

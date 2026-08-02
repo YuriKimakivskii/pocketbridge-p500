@@ -1,4 +1,4 @@
-# PocketBridge 1.3.1 — P500 Input, Full UI та Wake-on-LAN Hotfix
+# PocketBridge 1.4.0 — P500 Input, Full UI та Wake-on-LAN Hotfix
 
 ## Виправлено
 

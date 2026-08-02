@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
     private static final int MENU_RELOAD = 1;
@@ -260,6 +261,7 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 pageLoading = false;
                 if (!loadFailed) {
+                    injectSavedToken(view);
                     pageLoaded = true;
                     handler.removeCallbacks(reconnectRunnable);
                     hideOfflinePanel();
@@ -284,6 +286,18 @@ public class MainActivity extends Activity {
                 super.onReceivedError(view, errorCode, description, failingUrl);
             }
         });
+    }
+
+    private void injectSavedToken(WebView view) {
+        String savedToken = AppPreferences.token(this);
+        if (view == null || savedToken == null || savedToken.trim().length() == 0) {
+            return;
+        }
+        String quoted = JSONObject.quote(savedToken.trim());
+        view.loadUrl("javascript:(function(){try{"
+                + "if(window.PocketBridgeSetToken){window.PocketBridgeSetToken(" + quoted + ");}"
+                + "else{localStorage.setItem('pb_token'," + quoted + ");}"
+                + "}catch(e){}})()");
     }
 
     private boolean sameWithoutFragment(String first, String second) {

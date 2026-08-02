@@ -70,6 +70,16 @@ final class P500ApiClient {
         return request(context, "POST", "/api/p500/cmd", body, "");
     }
 
+    static Result youtubeSearch(Context context, String query) {
+        JSONObject body = new JSONObject();
+        try {
+            body.put("q", query == null ? "" : query);
+        } catch (Exception exception) {
+            return failure(exception);
+        }
+        return request(context, "POST", "/api/p500/youtube/search", body, "");
+    }
+
     static Result mouse(Context context, String kind, int dx, int dy, int delta) {
         JSONObject body = new JSONObject();
         try {
