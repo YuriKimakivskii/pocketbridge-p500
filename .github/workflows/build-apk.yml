@@ -34,18 +34,35 @@ jobs:
           distribution: temurin
           java-version: "11"
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          # AGP 4.2.2 + Gradle 6.7.1 run on Java 11. Pin an SDK
+          # command-line tools release that is also compatible with Java 11.
+          cmdline-tools-version: "8512546"
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
+          packages: >-
+            platform-tools platforms;android-30 build-tools;30.0.3
+
+      - name: Verify Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v sdkmanager
+          sdkmanager --version
+          test -d "$ANDROID_SDK_ROOT/platforms/android-30"
+          test -d "$ANDROID_SDK_ROOT/build-tools/30.0.3"
+
       - name: Set up Gradle 6.7.1
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "6.7.1"
 
-      - name: Install Android SDK components
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-30" "build-tools;30.0.3"
-
       - name: Prepare optional release signing
+        shell: bash
         run: |
+          set -euo pipefail
           if [ -n "$PB_KEYSTORE_BASE64" ] && [ -n "$PB_KEYSTORE_PASSWORD" ] && [ -n "$PB_KEY_ALIAS" ] && [ -n "$PB_KEY_PASSWORD" ]; then
             printf '%s' "$PB_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/pocketbridge-release.jks"
             echo "PB_KEYSTORE_PATH=$RUNNER_TEMP/pocketbridge-release.jks" >> "$GITHUB_ENV"
@@ -64,7 +81,9 @@ jobs:
         run: gradle --no-daemon assembleRelease
 
       - name: Collect artifacts
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p artifacts
           cp android-client/app/build/outputs/apk/debug/app-debug.apk \
              artifacts/PocketBridge-Remote-LG-P500-v1.7.0-debug.apk
