@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PocketBridge Remote</string>
+    <string name="app_version_label">PocketBridge Remote v1.7.0</string>
+    <string name="settings_title">Налаштування PocketBridge</string>
+    <string name="server_address">IP-адреса або ім’я ПК</string>
+    <string name="server_port">HTTP-порт</string>
+    <string name="access_token">Токен пристрою</string>
+    <string name="save_and_connect">Зберегти і підключитися</string>
+    <string name="test_connection">Перевірити з’єднання</string>
+    <string name="discover_pc">Знайти PocketBridge у Wi-Fi</string>
+    <string name="pair_device">Парувати цей телефон</string>
+    <string name="wake_pc">Розбудити ПК</string>
+    <string name="fullscreen">Повноекранний режим</string>
+    <string name="keep_screen_on">Не вимикати екран</string>
+    <string name="auto_reconnect">Автоматично перепідключатися</string>
+    <string name="auto_start">Запускати після ввімкнення телефона</string>
+    <string name="hardware_keys">Фізичні Volume +/− керують гучністю ПК</string>
+    <string name="long_press_media">Довге Volume +/− перемикає треки</string>
+    <string name="haptic_feedback">Вібрація після виконання команди</string>
+    <string name="sound_feedback">Звуковий сигнал результату</string>
+    <string name="launcher_mode">Дозволити PocketBridge як домашній екран</string>
+    <string name="retry">Повторити</string>
+    <string name="open_settings">ПК і налаштування</string>
+    <string name="open_native_remote">Відкрити Native Core</string>
+    <string name="native_remote_title">Нативний пульт</string>
+    <string name="offline_title">ПК недоступний</string>
+    <string name="offline_hint">Перевір Wi-Fi, профіль ПК, сервер PocketBridge і брандмауер Windows.</string>
+    <string name="menu_reload">Оновити</string>
+    <string name="menu_settings">ПК і налаштування</string>
+    <string name="menu_native_remote">Нативний пульт</string>
+    <string name="menu_diagnostics">Діагностика</string>
+    <string name="export_diagnostics">Зберегти діагностику</string>
+    <string name="diagnostics_title">Діагностика</string>
+    <string name="menu_exit">Вийти</string>
+    <string name="native_core_title">PocketBridge Native Core</string>
+    <string name="profile_prompt">Профіль</string>
+    <string name="native_core_mode">Native Core: панель без WebView</string>
+    <string name="open_web_tools">Розширені вебінструменти</string>
+</resources>
