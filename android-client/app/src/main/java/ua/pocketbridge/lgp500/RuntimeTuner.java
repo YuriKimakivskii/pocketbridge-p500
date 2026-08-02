@@ -65,10 +65,10 @@ final class RuntimeTuner {
     }
 
     int touchInterval(int configuredMs) {
-        int base = clamp(configuredMs, 60, 200);
-        if (tier == TIER_ECO) return Math.max(base, 120);
-        if (tier == TIER_BALANCED) return Math.max(base, 85);
-        return Math.max(60, Math.min(base, 80));
+        int base = clamp(configuredMs, 35, 160);
+        if (tier == TIER_ECO) return Math.max(base, 70);
+        if (tier == TIER_BALANCED) return Math.max(base, 45);
+        return Math.max(35, Math.min(base, 45));
     }
 
     long statusDelay(int activeMs, int idleMs, boolean idle) {

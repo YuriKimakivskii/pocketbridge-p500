@@ -59,8 +59,15 @@ final class AppPreferences {
     }
 
     static String panelUrl(Context context) {
-        String path = p500LiteMode(context) ? "/p500/" : "/";
-        return baseUrl(context) + path + "#token=" + encode(token(context));
+        return p500LiteMode(context) ? litePanelUrl(context) : fullPanelUrl(context);
+    }
+
+    static String fullPanelUrl(Context context) {
+        return baseUrl(context) + "/#token=" + encode(token(context));
+    }
+
+    static String litePanelUrl(Context context) {
+        return baseUrl(context) + "/p500/#token=" + encode(token(context));
     }
 
     static boolean p500LiteMode(Context context) {

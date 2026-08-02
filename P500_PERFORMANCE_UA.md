@@ -84,7 +84,7 @@
   "performance_mode": "p500",
   "p500_status_refresh_seconds": 8,
   "p500_idle_refresh_seconds": 20,
-  "p500_touch_interval_ms": 80,
+  "p500_touch_interval_ms": 45,
   "p500_screen_quality": 32,
   "p500_screen_max_width": 320,
   "p500_max_buttons": 6

@@ -359,8 +359,9 @@ public class SettingsActivity extends Activity {
         new AsyncTask<Void, Void, String>() {
             @Override protected String doInBackground(Void... values) {
                 try {
-                    WakeOnLan.send(profile.mac, profile.broadcast, 9);
-                    return "Magic Packet надіслано";
+                    WakeOnLan.Result result = WakeOnLan.send(
+                            getApplicationContext(), profile.mac, profile.broadcast, 9);
+                    return result.summary();
                 } catch (Exception exception) {
                     return exception.getMessage() == null ? "Не вдалося надіслати Wake-on-LAN" : exception.getMessage();
                 }

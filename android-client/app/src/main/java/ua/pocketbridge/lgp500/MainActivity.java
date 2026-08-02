@@ -64,6 +64,7 @@ public class MainActivity extends Activity {
     private String lastFailureDetail = "";
     private boolean volumeUpLongHandled;
     private boolean volumeDownLongHandled;
+    private boolean forceFullUi;
 
     private final Runnable dimRunnable = new Runnable() {
         @Override
@@ -125,6 +126,7 @@ public class MainActivity extends Activity {
             return;
         }
 
+        forceFullUi = getIntent().getBooleanExtra("full_ui", false);
         if (AppPreferences.nativeCoreMode(this)
                 && !getIntent().getBooleanExtra("force_web", false)) {
             startActivity(new Intent(this, NativeCoreActivity.class));
@@ -195,11 +197,12 @@ public class MainActivity extends Activity {
         settings.setSaveFormData(false);
         settings.setSavePassword(false);
         settings.setAppCacheEnabled(false);
-        settings.setCacheMode(AppPreferences.p500LiteMode(this)
+        boolean liteWeb = AppPreferences.p500LiteMode(this) && !forceFullUi;
+        settings.setCacheMode(liteWeb
                 ? WebSettings.LOAD_CACHE_ELSE_NETWORK : WebSettings.LOAD_DEFAULT);
         settings.setUserAgentString(settings.getUserAgentString()
                 + " PocketBridgeRemote/" + BuildConfig.VERSION_NAME
-                + (AppPreferences.p500LiteMode(this) ? " P500Lite/1" : " FullUI/1"));
+                + (liteWeb ? " P500Lite/1" : " FullUI/2"));
 
         webView.setDownloadListener(new DownloadListener() {
             @Override
@@ -319,7 +322,9 @@ public class MainActivity extends Activity {
         pageLoaded = false;
         pageLoading = false;
         loadFailed = false;
-        currentPanelUrl = AppPreferences.panelUrl(this);
+        currentPanelUrl = forceFullUi
+                ? AppPreferences.fullPanelUrl(this)
+                : AppPreferences.panelUrl(this);
         if (!isNetworkConnected()) {
             showOfflinePanel("Wi-Fi або мережеве підключення відсутнє");
             scheduleReconnect();
@@ -494,8 +499,9 @@ public class MainActivity extends Activity {
             @Override
             protected String doInBackground(Void... values) {
                 try {
-                    WakeOnLan.send(profile.mac, profile.broadcast, 9);
-                    return "Magic Packet надіслано для " + profile.name;
+                    WakeOnLan.Result result = WakeOnLan.send(
+                            getApplicationContext(), profile.mac, profile.broadcast, 9);
+                    return result.summary();
                 } catch (Exception exception) {
                     return exception.getMessage() == null
                             ? "Wake-on-LAN не виконано" : exception.getMessage();
@@ -603,7 +609,9 @@ public class MainActivity extends Activity {
         if (webView != null) {
             applyWindowPreferences();
             resetIdleTimer();
-            String updatedUrl = AppPreferences.panelUrl(this);
+            String updatedUrl = forceFullUi
+                    ? AppPreferences.fullPanelUrl(this)
+                    : AppPreferences.panelUrl(this);
             if (currentPanelUrl == null || !currentPanelUrl.equals(updatedUrl)) {
                 authenticationFailed = false;
                 loadPanel();

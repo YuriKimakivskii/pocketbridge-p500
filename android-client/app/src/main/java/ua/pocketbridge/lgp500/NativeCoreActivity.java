@@ -64,8 +64,8 @@ public class NativeCoreActivity extends Activity {
     private int statusCycle;
     private int statusIntervalMs = 8000;
     private int idleIntervalMs = 20000;
-    private int configuredTouchIntervalMs = 80;
-    private int touchIntervalMs = 80;
+    private int configuredTouchIntervalMs = 45;
+    private int touchIntervalMs = 45;
     private long lastInteractionAt;
     private long lastDownAt;
     private float downX;
@@ -75,6 +75,7 @@ public class NativeCoreActivity extends Activity {
     private int pendingDx;
     private int pendingDy;
     private boolean mouseInFlight;
+    private boolean touchFlushScheduled;
     private boolean volumeUpLongHandled;
     private boolean volumeDownLongHandled;
 
@@ -83,7 +84,10 @@ public class NativeCoreActivity extends Activity {
     };
 
     private final Runnable touchFlushRunnable = new Runnable() {
-        @Override public void run() { flushTouchMovement(); }
+        @Override public void run() {
+            touchFlushScheduled = false;
+            flushTouchMovement();
+        }
     };
 
     private final Runnable dimRunnable = new Runnable() {
@@ -215,8 +219,10 @@ public class NativeCoreActivity extends Activity {
                             pendingDx = clamp(pendingDx + dx, -600, 600);
                             pendingDy = clamp(pendingDy + dy, -600, 600);
                         }
-                        handler.removeCallbacks(touchFlushRunnable);
-                        handler.postDelayed(touchFlushRunnable, touchIntervalMs);
+                        // Throttle instead of debounce: the previous implementation
+                        // postponed every packet while the finger kept moving, so the
+                        // cursor advanced only after short pauses and visibly jumped.
+                        scheduleTouchFlush(0L);
                     }
                     return true;
                 }
@@ -320,6 +326,15 @@ public class NativeCoreActivity extends Activity {
             @Override public void onClick(View view) {
                 Intent intent = new Intent(NativeCoreActivity.this, MainActivity.class);
                 intent.putExtra("force_web", true);
+                intent.putExtra("full_ui", true);
+                startActivity(intent);
+            }
+        });
+        ((Button) findViewById(R.id.core_lite_ui)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                Intent intent = new Intent(NativeCoreActivity.this, MainActivity.class);
+                intent.putExtra("force_web", true);
+                intent.putExtra("full_ui", false);
                 startActivity(intent);
             }
         });
@@ -394,7 +409,7 @@ public class NativeCoreActivity extends Activity {
         if (profiles == null) profiles = new JSONArray();
         statusIntervalMs = Math.max(3000, data.optInt("s", 8) * 1000);
         idleIntervalMs = Math.max(10000, data.optInt("i", 20) * 1000);
-        configuredTouchIntervalMs = clamp(data.optInt("t", 80), 60, 200);
+        configuredTouchIntervalMs = clamp(data.optInt("t", 45), 35, 160);
         touchIntervalMs = runtimeTuner.touchInterval(configuredTouchIntervalMs);
         renderProfiles(data.optString("d", ""));
         JSONObject initialStatus = data.optJSONObject("z");
@@ -580,6 +595,12 @@ public class NativeCoreActivity extends Activity {
         } : null);
     }
 
+    private void scheduleTouchFlush(long delayMs) {
+        if (destroyed || mouseInFlight || touchFlushScheduled) return;
+        touchFlushScheduled = true;
+        handler.postDelayed(touchFlushRunnable, Math.max(0L, delayMs));
+    }
+
     private void flushTouchMovement() {
         if (mouseInFlight || destroyed) return;
         final int dx;
@@ -610,7 +631,7 @@ public class NativeCoreActivity extends Activity {
                 } else {
                     synchronized (NativeCoreActivity.this) {
                         if (pendingDx != 0 || pendingDy != 0) {
-                            handler.postDelayed(touchFlushRunnable, touchIntervalMs);
+                            scheduleTouchFlush(touchIntervalMs);
                         }
                     }
                 }
@@ -638,8 +659,9 @@ public class NativeCoreActivity extends Activity {
                 String detail;
                 boolean ok;
                 try {
-                    WakeOnLan.send(profile.mac, profile.broadcast, 9);
-                    detail = "Magic Packet надіслано";
+                    WakeOnLan.Result result = WakeOnLan.send(
+                            getApplicationContext(), profile.mac, profile.broadcast, 9);
+                    detail = result.summary();
                     ok = true;
                 } catch (Exception exception) {
                     detail = exception.getMessage() == null ? "Wake-on-LAN не виконано" : exception.getMessage();
@@ -817,6 +839,7 @@ public class NativeCoreActivity extends Activity {
         resumed = false;
         handler.removeCallbacks(statusRunnable);
         handler.removeCallbacks(touchFlushRunnable);
+        touchFlushScheduled = false;
         handler.removeCallbacks(dimRunnable);
         super.onPause();
     }

@@ -123,9 +123,10 @@ public class NativeRemoteActivity extends Activity {
             private boolean ok;
             @Override protected String doInBackground(Void... values) {
                 try {
-                    WakeOnLan.send(profile.mac, profile.broadcast, 9);
+                    WakeOnLan.Result result = WakeOnLan.send(
+                            getApplicationContext(), profile.mac, profile.broadcast, 9);
                     ok = true;
-                    return "Magic Packet надіслано для " + profile.name;
+                    return result.summary();
                 } catch (Exception exception) {
                     return exception.getMessage() == null ? "Wake-on-LAN не виконано" : exception.getMessage();
                 }

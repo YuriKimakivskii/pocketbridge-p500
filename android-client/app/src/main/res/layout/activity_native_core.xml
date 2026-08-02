@@ -232,25 +232,32 @@
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
-                <Button android:id="@+id/core_web_tools" style="@style/CoreMoreButtonPrimary" android:text="Вебінструменти" />
+                <Button android:id="@+id/core_web_tools" style="@style/CoreMoreButtonPrimary" android:text="Повний UI" />
+                <Button android:id="@+id/core_lite_ui" style="@style/CoreMoreButton" android:text="Lite UI" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
                 <Button android:id="@+id/core_wake" style="@style/CoreMoreButton" android:text="Wake-on-LAN" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:orientation="horizontal">
                 <Button android:id="@+id/core_backup_remote" style="@style/CoreMoreButton" android:text="Резервний пульт" />
-                <Button android:id="@+id/core_refresh" style="@style/CoreMoreButton" android:text="Оновити профілі" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
+                <Button android:id="@+id/core_refresh" style="@style/CoreMoreButton" android:text="Оновити профілі" />
                 <Button android:id="@+id/core_settings" style="@style/CoreMoreButtonPrimary" android:text="Налаштування" />
-                <Button android:id="@+id/core_diagnostics" style="@style/CoreMoreButton" android:text="Діагностика" />
             </LinearLayout>
+            <Button
+                android:id="@+id/core_diagnostics"
+                style="@style/CoreMoreButton"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:text="Експорт діагностики" />
         </LinearLayout>
     </FrameLayout>
 

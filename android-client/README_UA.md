@@ -1,4 +1,4 @@
-# PocketBridge Remote 1.7.0 для LG P500
+# PocketBridge Remote 1.7.1 для LG P500
 
 Нативний Android-клієнт із підтримкою API 10.
 
@@ -22,11 +22,11 @@
 Артефакт GitHub Actions:
 
 ```text
-PocketBridge-Remote-LG-P500-v1.7.0
+PocketBridge-Remote-LG-P500-v1.7.1
 ```
 
 Встановлення:
 
 ```powershell
-adb install -r PocketBridge-Remote-LG-P500-v1.7.0-debug.apk
+adb install -r PocketBridge-Remote-LG-P500-v1.7.1-debug.apk
 ```
