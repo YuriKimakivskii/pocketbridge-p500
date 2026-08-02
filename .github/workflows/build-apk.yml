@@ -86,17 +86,17 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts
           cp android-client/app/build/outputs/apk/debug/app-debug.apk \
-             artifacts/PocketBridge-Remote-LG-P500-v1.8.0-debug.apk
+             artifacts/PocketBridge-Remote-MultiDevice-v1.9.0-debug.apk
           if [ -f android-client/app/build/outputs/apk/release/app-release.apk ]; then
             cp android-client/app/build/outputs/apk/release/app-release.apk \
-               artifacts/PocketBridge-Remote-LG-P500-v1.8.0-release.apk
+               artifacts/PocketBridge-Remote-MultiDevice-v1.9.0-release.apk
           fi
           (cd artifacts && sha256sum *.apk > SHA256SUMS.txt)
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: PocketBridge-Remote-LG-P500-v1.8.0
+          name: PocketBridge-Remote-MultiDevice-v1.9.0
           path: artifacts/
           if-no-files-found: error
           retention-days: 30
