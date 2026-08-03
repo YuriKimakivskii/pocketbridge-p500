@@ -32,10 +32,12 @@ public class NativeCoreActivity extends Activity {
     private static final int PAGE_TOUCH = 2;
     private static final int PAGE_KEYS = 3;
     private static final int PAGE_MORE = 4;
+    private static final int PAGE_MONITOR = 5;
 
     private Handler handler;
     private NativeRequestQueue commandQueue;
     private NativeRequestQueue mouseQueue;
+    private RealtimeInputClient realtimeClient;
     private TextView connectionText;
     private TextView activeText;
     private TextView commandText;
@@ -52,6 +54,15 @@ public class NativeCoreActivity extends Activity {
     private View touchPage;
     private View keysPage;
     private View morePage;
+    private View monitorPage;
+    private TextView monitorHealth;
+    private TextView monitorCpu;
+    private TextView monitorRam;
+    private TextView monitorBattery;
+    private TextView monitorNetwork;
+    private TextView monitorDisks;
+    private TextView monitorProcesses;
+    private TextView monitorAlerts;
     private View touchSurface;
     private EditText textInput;
     private EditText youtubeSearchInput;
@@ -62,6 +73,9 @@ public class NativeCoreActivity extends Activity {
     private boolean resumed;
     private boolean destroyed;
     private boolean statusInFlight;
+    private boolean monitorInFlight;
+    private boolean monitorEnabled = true;
+    private int currentPage = PAGE_PANEL;
     private boolean bootstrapInFlight;
     private int statusFailures;
     private int statusCycle;
@@ -81,6 +95,25 @@ public class NativeCoreActivity extends Activity {
     private boolean touchFlushScheduled;
     private boolean volumeUpLongHandled;
     private boolean volumeDownLongHandled;
+    private boolean modernLayout;
+    private float touchDensity = 1f;
+    private boolean twoFingerGesture;
+    private boolean twoFingerMoved;
+    private float lastTwoFingerY;
+    private boolean threeFingerGesture;
+    private float threeFingerStartX;
+    private boolean dragging;
+    private boolean pendingDragEnd;
+    private boolean dragEndRetryScheduled;
+    private int dragEndRetryCount;
+    private long lastTapAt;
+    private long lastMoveSentAt;
+    private int realtimeSequence;
+    private boolean realtimeReady;
+
+    private final Runnable singleTapRunnable = new Runnable() {
+        @Override public void run() { sendMouse("left_click", 0, 0, 0, true); }
+    };
 
     private final Runnable statusRunnable = new Runnable() {
         @Override public void run() { requestStatus(); }
@@ -91,6 +124,10 @@ public class NativeCoreActivity extends Activity {
             touchFlushScheduled = false;
             flushTouchMovement();
         }
+    };
+
+    private final Runnable realtimeReconnectRunnable = new Runnable() {
+        @Override public void run() { connectRealtime(); }
     };
 
     private final Runnable dimRunnable = new Runnable() {
@@ -104,6 +141,9 @@ public class NativeCoreActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DeviceLayout.applyOrientation(this);
+        modernLayout = DeviceLayout.isModern(this);
+        touchDensity = Math.max(1f, getResources().getDisplayMetrics().density);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         if (!AppPreferences.isConfigured(this)) {
             startActivity(new Intent(this, SettingsActivity.class));
@@ -115,19 +155,47 @@ public class NativeCoreActivity extends Activity {
         commandQueue = new NativeRequestQueue(handler, runtimeTuner.commandQueueCapacity());
         mouseQueue = new NativeRequestQueue(handler, runtimeTuner.mouseQueueCapacity());
         applyWindowPreferences();
-        setContentView(R.layout.activity_native_core);
+        setContentView(DeviceLayout.nativeCoreLayout(this));
         bindViews();
         bindNavigation();
         bindTouchpad();
         bindKeyboard();
         bindYouTube();
         bindMore();
-        showPage(PAGE_PANEL);
+        String initialPage = getIntent() == null ? "" : getIntent().getStringExtra("open_page");
+        showPage("touch".equals(initialPage) ? PAGE_TOUCH : PAGE_PANEL);
         activeConnectionKey = AppPreferences.baseUrl(this) + "|" + AppPreferences.token(this);
         JSONObject cached = NativeCache.loadBootstrap(this);
         if (cached != null) renderBootstrap(cached, true);
         requestBootstrap();
-        DiagnosticLog.write(this, "native_core_start", "client=" + BuildConfig.VERSION_NAME);
+        DiagnosticLog.write(this, "native_core_start", "client=" + BuildConfig.VERSION_NAME + " layout=" + DeviceLayout.apiKey(this));
+    }
+
+    private void connectRealtime() {
+        if (!resumed || destroyed || !AppPreferences.realtimeInput(this) || realtimeClient != null) return;
+        realtimeClient = new RealtimeInputClient(this, handler, new RealtimeInputClient.Listener() {
+            @Override public void onReady() {
+                if (!resumed || destroyed) return;
+                realtimeReady = true;
+                commandText.setText("Realtime-тачпад підключено");
+                DiagnosticLog.write(NativeCoreActivity.this, "realtime_ready", AppPreferences.deviceRole(NativeCoreActivity.this));
+            }
+            @Override public void onClosed(String detail) {
+                realtimeReady = false;
+                realtimeClient = null;
+                if (!resumed || destroyed) return;
+                commandText.setText("Realtime недоступний, використовую HTTP: " + detail);
+                DiagnosticLog.write(NativeCoreActivity.this, "realtime_closed", detail);
+                handler.removeCallbacks(realtimeReconnectRunnable);
+                handler.postDelayed(realtimeReconnectRunnable, 3000L);
+            }
+            @Override public void onMessage(JSONObject message) {
+                if (!message.optBoolean("ok", true) && "error".equals(message.optString("type", ""))) {
+                    commandText.setText("Realtime: " + message.optString("detail", "помилка"));
+                }
+            }
+        });
+        realtimeClient.connect();
     }
 
     private void bindViews() {
@@ -137,14 +205,18 @@ public class NativeCoreActivity extends Activity {
         perfText = (TextView) findViewById(R.id.core_perf);
         profileSpinner = (Spinner) findViewById(R.id.core_profile_spinner);
         emptyProfileText = (TextView) findViewById(R.id.core_empty_profile);
-        actionButtons = new Button[] {
-                (Button) findViewById(R.id.core_action_1),
-                (Button) findViewById(R.id.core_action_2),
-                (Button) findViewById(R.id.core_action_3),
-                (Button) findViewById(R.id.core_action_4),
-                (Button) findViewById(R.id.core_action_5),
-                (Button) findViewById(R.id.core_action_6)
+        int[] actionIds = new int[] {
+                R.id.core_action_1, R.id.core_action_2, R.id.core_action_3,
+                R.id.core_action_4, R.id.core_action_5, R.id.core_action_6,
+                R.id.core_action_7, R.id.core_action_8, R.id.core_action_9,
+                R.id.core_action_10, R.id.core_action_11, R.id.core_action_12
         };
+        ArrayList<Button> availableButtons = new ArrayList<Button>();
+        for (int i = 0; i < actionIds.length; i++) {
+            Button candidate = (Button) findViewById(actionIds[i]);
+            if (candidate != null) availableButtons.add(candidate);
+        }
+        actionButtons = availableButtons.toArray(new Button[availableButtons.size()]);
         actionTargets = new JSONObject[actionButtons.length];
         for (int i = 0; i < actionButtons.length; i++) {
             final int index = i;
@@ -172,6 +244,15 @@ public class NativeCoreActivity extends Activity {
         touchPage = findViewById(R.id.core_touch_page);
         keysPage = findViewById(R.id.core_keys_page);
         morePage = findViewById(R.id.core_more_page);
+        monitorPage = findViewById(R.id.core_monitor_page);
+        monitorHealth = (TextView) findViewById(R.id.core_monitor_health);
+        monitorCpu = (TextView) findViewById(R.id.core_monitor_cpu);
+        monitorRam = (TextView) findViewById(R.id.core_monitor_ram);
+        monitorBattery = (TextView) findViewById(R.id.core_monitor_battery);
+        monitorNetwork = (TextView) findViewById(R.id.core_monitor_network);
+        monitorDisks = (TextView) findViewById(R.id.core_monitor_disks);
+        monitorProcesses = (TextView) findViewById(R.id.core_monitor_processes);
+        monitorAlerts = (TextView) findViewById(R.id.core_monitor_alerts);
         touchSurface = findViewById(R.id.core_touch_surface);
         textInput = (EditText) findViewById(R.id.core_text_input);
         youtubeSearchInput = (EditText) findViewById(R.id.core_youtube_search);
@@ -194,11 +275,22 @@ public class NativeCoreActivity extends Activity {
         bindPageButton(R.id.core_nav_youtube, PAGE_YOUTUBE);
         bindPageButton(R.id.core_nav_touch, PAGE_TOUCH);
         bindPageButton(R.id.core_nav_keys, PAGE_KEYS);
+        bindOptionalPageButton(R.id.core_nav_monitor, PAGE_MONITOR);
         bindPageButton(R.id.core_nav_more, PAGE_MORE);
     }
 
     private void bindPageButton(int id, final int page) {
-        ((Button) findViewById(id)).setOnClickListener(new View.OnClickListener() {
+        Button button = (Button) findViewById(id);
+        if (button == null) return;
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { showPage(page); }
+        });
+    }
+
+    private void bindOptionalPageButton(int id, final int page) {
+        View button = findViewById(id);
+        if (button == null) return;
+        button.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) { showPage(page); }
         });
     }
@@ -207,37 +299,102 @@ public class NativeCoreActivity extends Activity {
         touchSurface.setOnTouchListener(new View.OnTouchListener() {
             @Override public boolean onTouch(View view, MotionEvent event) {
                 touchActivity();
-                int action = event.getAction();
+                int action = event.getActionMasked();
                 if (action == MotionEvent.ACTION_DOWN) {
+                    finishPendingDragIfReady();
                     lastDownAt = System.currentTimeMillis();
                     downX = lastX = event.getX();
                     downY = lastY = event.getY();
+                    twoFingerGesture = false;
+                    twoFingerMoved = false;
+                    threeFingerGesture = false;
+                    dragging = false;
                     return true;
                 }
-                if (action == MotionEvent.ACTION_MOVE) {
+                if (action == MotionEvent.ACTION_POINTER_DOWN && event.getPointerCount() >= 2) {
+                    twoFingerGesture = true;
+                    twoFingerMoved = false;
+                    lastTwoFingerY = (event.getY(0) + event.getY(1)) / 2f;
+                    if (modernLayout && event.getPointerCount() >= 3) {
+                        threeFingerGesture = true;
+                        threeFingerStartX = (event.getX(0) + event.getX(1) + event.getX(2)) / 3f;
+                    }
+                    return true;
+                }
+                if (action == MotionEvent.ACTION_MOVE && modernLayout && threeFingerGesture && event.getPointerCount() >= 3) {
+                    float averageX = (event.getX(0) + event.getX(1) + event.getX(2)) / 3f;
+                    if (Math.abs(averageX - threeFingerStartX) >= touchDensity * 55f) {
+                        executeSimpleAction("alt_tab");
+                        threeFingerGesture = false;
+                        twoFingerMoved = true;
+                    }
+                    return true;
+                }
+                if (action == MotionEvent.ACTION_MOVE && modernLayout && twoFingerGesture && event.getPointerCount() >= 2) {
+                    float averageY = (event.getY(0) + event.getY(1)) / 2f;
+                    float deltaY = averageY - lastTwoFingerY;
+                    if (Math.abs(deltaY) >= touchDensity * 4f) {
+                        int scroll = clamp(Math.round(-deltaY / (touchDensity * 7f)), -5, 5);
+                        if (scroll != 0) {
+                            twoFingerMoved = true;
+                            sendMouse("scroll", 0, 0, scroll, false);
+                        }
+                        lastTwoFingerY = averageY;
+                    }
+                    return true;
+                }
+                if (action == MotionEvent.ACTION_MOVE && !twoFingerGesture) {
                     float x = event.getX();
                     float y = event.getY();
-                    int dx = Math.round(x - lastX);
-                    int dy = Math.round(y - lastY);
+                    float divisor = modernLayout ? touchDensity : 1f;
+                    int dx = Math.round((x - lastX) / divisor);
+                    int dy = Math.round((y - lastY) / divisor);
                     lastX = x;
                     lastY = y;
+                    long held = System.currentTimeMillis() - lastDownAt;
+                    float totalDistance = Math.abs(x - downX) + Math.abs(y - downY);
+                    if (!dragging && held >= 480L && totalDistance < touchDensity * 34f) {
+                        dragging = true;
+                        sendMouse("drag_start", 0, 0, 0, true);
+                    }
                     if (Math.abs(dx) + Math.abs(dy) >= 2) {
                         synchronized (NativeCoreActivity.this) {
                             pendingDx = clamp(pendingDx + dx, -600, 600);
                             pendingDy = clamp(pendingDy + dy, -600, 600);
                         }
-                        // Throttle instead of debounce: the previous implementation
-                        // postponed every packet while the finger kept moving, so the
-                        // cursor advanced only after short pauses and visibly jumped.
                         scheduleTouchFlush(0L);
                     }
                     return true;
                 }
+                if (action == MotionEvent.ACTION_POINTER_UP) return true;
                 if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                    boolean wasTwoFinger = twoFingerGesture;
+                    boolean wasDragging = dragging;
+                    twoFingerGesture = false;
+                    threeFingerGesture = false;
+                    dragging = false;
                     float distance = Math.abs(event.getX() - downX) + Math.abs(event.getY() - downY);
-                    long duration = System.currentTimeMillis() - lastDownAt;
-                    if (action == MotionEvent.ACTION_UP && distance < 14f && duration < 450L) {
-                        sendMouse("left_click", 0, 0, 0, false);
+                    long now = System.currentTimeMillis();
+                    long duration = now - lastDownAt;
+                    float tapThreshold = modernLayout ? touchDensity * 20f : 14f;
+                    if (wasDragging) {
+                        synchronized (NativeCoreActivity.this) {
+                            pendingDragEnd = true;
+                        }
+                        flushTouchMovement();
+                        finishPendingDragIfReady();
+                    } else if (wasTwoFinger && !twoFingerMoved && action == MotionEvent.ACTION_UP && duration < 450L) {
+                        handler.removeCallbacks(singleTapRunnable);
+                        sendMouse("right_click", 0, 0, 0, true);
+                    } else if (!wasTwoFinger && action == MotionEvent.ACTION_UP && distance < tapThreshold && duration < 450L) {
+                        if (now - lastTapAt < 300L) {
+                            handler.removeCallbacks(singleTapRunnable);
+                            lastTapAt = 0L;
+                            sendMouse("double_click", 0, 0, 0, true);
+                        } else {
+                            lastTapAt = now;
+                            handler.postDelayed(singleTapRunnable, 280L);
+                        }
                     } else {
                         flushTouchMovement();
                     }
@@ -436,6 +593,34 @@ public class NativeCoreActivity extends Activity {
                 startActivity(new Intent(NativeCoreActivity.this, SettingsActivity.class));
             }
         });
+        ((Button) findViewById(R.id.core_remote_screen)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                startActivity(new Intent(NativeCoreActivity.this, RemoteScreenActivity.class));
+            }
+        });
+        ((Button) findViewById(R.id.core_clipboard)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                startActivity(new Intent(NativeCoreActivity.this, ClipboardActivity.class));
+            }
+        });
+        ((Button) findViewById(R.id.core_monitor_open)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { showPage(PAGE_MONITOR); }
+        });
+        ((Button) findViewById(R.id.core_files)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                startActivity(new Intent(NativeCoreActivity.this, FileManagerActivity.class));
+            }
+        });
+        ((Button) findViewById(R.id.core_quick_upload)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) {
+                Intent intent = new Intent(NativeCoreActivity.this, FileManagerActivity.class);
+                intent.putExtra("open_upload", true);
+                startActivity(intent);
+            }
+        });
+        ((Button) findViewById(R.id.core_monitor_refresh)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { requestMonitor(true); }
+        });
         ((Button) findViewById(R.id.core_diagnostics)).setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) { exportDiagnostics(); }
         });
@@ -488,14 +673,22 @@ public class NativeCoreActivity extends Activity {
         if (profiles == null) profiles = new JSONArray();
         statusIntervalMs = Math.max(3000, data.optInt("s", 8) * 1000);
         idleIntervalMs = Math.max(10000, data.optInt("i", 20) * 1000);
-        configuredTouchIntervalMs = clamp(data.optInt("t", 45), 35, 160);
+        monitorEnabled = data.optBoolean("mo", true);
+        View monitorButton = findViewById(R.id.core_monitor_open);
+        if (monitorButton != null) monitorButton.setEnabled(monitorEnabled);
+        View monitorNav = findViewById(R.id.core_nav_monitor);
+        if (monitorNav != null) monitorNav.setVisibility(monitorEnabled ? View.VISIBLE : View.GONE);
+        configuredTouchIntervalMs = clamp(data.optInt("t", modernLayout ? 24 : 45), modernLayout ? 18 : 35, 160);
         touchIntervalMs = runtimeTuner.touchInterval(configuredTouchIntervalMs);
         renderProfiles(data.optString("d", ""));
         JSONObject initialStatus = data.optJSONObject("z");
         if (initialStatus != null) renderStatus(initialStatus, 0L);
         long cacheAgeMs = NativeCache.bootstrapAgeMs(this);
         long ageSeconds = cacheAgeMs == Long.MAX_VALUE ? -1L : cacheAgeMs / 1000L;
-        perfText.setText(runtimeTuner.summary() + (cached && ageSeconds >= 0 ? " · кеш " + ageSeconds + "с" : ""));
+        JSONObject ui = data.optJSONObject("ui");
+        String role = ui == null ? AppPreferences.deviceRole(this) : ui.optString("role", AppPreferences.deviceRole(this));
+        perfText.setText(role.toUpperCase() + " · " + runtimeTuner.summary()
+                + (cached && ageSeconds >= 0 ? " · кеш " + ageSeconds + "с" : ""));
     }
 
     private void renderProfiles(String defaultId) {
@@ -621,8 +814,77 @@ public class NativeCoreActivity extends Activity {
                     renderOffline(result);
                 }
                 scheduleStatus(nextStatusDelay());
+                if (currentPage == PAGE_MONITOR && monitorEnabled) requestMonitor(false);
             }
         });
+    }
+
+    private void requestMonitor(final boolean force) {
+        if (!monitorEnabled || monitorInFlight || destroyed || !resumed) return;
+        monitorInFlight = true;
+        if (force) commandText.setText("Оновлення моніторингу…");
+        commandQueue.submit(new NativeRequestQueue.Request() {
+            @Override public P500ApiClient.Result run() {
+                return P500ApiClient.monitor(getApplicationContext(), force);
+            }
+        }, new NativeRequestQueue.Callback() {
+            @Override public void complete(P500ApiClient.Result result) {
+                monitorInFlight = false;
+                runtimeTuner.record(result);
+                if (result.ok) {
+                    renderMonitor(result.data);
+                    if (force) commandText.setText("Моніторинг оновлено · " + result.latencyMs + " мс");
+                } else {
+                    monitorHealth.setText("Моніторинг недоступний");
+                    monitorHealth.setTextColor(getResources().getColor(R.color.status_error));
+                    if (force) commandText.setText("Монітор: " + result.detail);
+                }
+            }
+        });
+    }
+
+    private void renderMonitor(JSONObject data) {
+        String health = data.optString("h", "ok");
+        monitorHealth.setText("critical".equals(health) ? "Потрібна увага" : "warn".equals(health) ? "Є попередження" : "Система в нормі");
+        monitorHealth.setTextColor(getResources().getColor("ok".equals(health) ? R.color.status_ok : "warn".equals(health) ? R.color.status_warn : R.color.status_error));
+        monitorCpu.setText("CPU: " + data.optInt("c", 0) + "%");
+        int swap = data.optInt("s", 0);
+        monitorRam.setText("RAM: " + data.optInt("r", 0) + "% · SWAP " + swap + "%");
+        if (data.isNull("b")) monitorBattery.setText("Батарея: немає даних");
+        else monitorBattery.setText("Батарея: " + data.optInt("b", 0) + "%" + (data.optInt("ac", 0) == 1 ? " · зарядка" : ""));
+        monitorNetwork.setText("Мережа: ↓ " + formatRate(data.optLong("dn", 0L)) + " · ↑ " + formatRate(data.optLong("up", 0L)));
+        StringBuilder disksText = new StringBuilder("Диски");
+        JSONArray disks = data.optJSONArray("d");
+        if (disks == null || disks.length() == 0) disksText.append("\n—");
+        else for (int i = 0; i < disks.length(); i++) {
+            JSONObject item = disks.optJSONObject(i); if (item == null) continue;
+            disksText.append("\n").append(item.optString("n", "Диск")).append(": ").append(item.optInt("p", 0)).append("% · ").append(item.optDouble("f", 0.0)).append(" ГБ вільно");
+        }
+        monitorDisks.setText(disksText.toString());
+        StringBuilder processText = new StringBuilder("Процеси");
+        JSONArray processes = data.optJSONArray("p");
+        if (processes == null || processes.length() == 0) processText.append("\n—");
+        else for (int i = 0; i < processes.length(); i++) {
+            JSONObject item = processes.optJSONObject(i); if (item == null) continue;
+            processText.append("\n").append(item.optString("n", "process")).append(" · ").append(item.optDouble("m", 0.0)).append(" МБ · CPU ").append(item.optDouble("c", 0.0)).append("%");
+        }
+        monitorProcesses.setText(processText.toString());
+        StringBuilder alertText = new StringBuilder("Попередження");
+        JSONArray alerts = data.optJSONArray("a");
+        if (alerts == null || alerts.length() == 0) alertText.append("\nНемає");
+        else for (int i = 0; i < alerts.length(); i++) {
+            JSONObject item = alerts.optJSONObject(i); if (item != null) alertText.append("\n• ").append(item.optString("text", "Увага"));
+        }
+        monitorAlerts.setText(alertText.toString());
+        monitorAlerts.setTextColor(getResources().getColor(alerts != null && alerts.length() > 0 ? R.color.status_warn : R.color.text_primary));
+    }
+
+    private String formatRate(long bytesPerSecond) {
+        double value = Math.max(0L, bytesPerSecond);
+        String[] units = new String[] {"B/s", "KB/s", "MB/s", "GB/s"};
+        int index = 0;
+        while (value >= 1024.0 && index < units.length - 1) { value /= 1024.0; index++; }
+        return (index == 0 ? String.valueOf((long) value) : String.valueOf(Math.round(value * 10.0) / 10.0)) + " " + units[index];
     }
 
     private void renderStatus(JSONObject data, long latencyMs) {
@@ -658,26 +920,73 @@ public class NativeCoreActivity extends Activity {
     }
 
     private void sendMouse(final String kind, final int dx, final int dy, final int delta, final boolean feedback) {
-        mouseQueue.submit(new NativeRequestQueue.Request() {
+        if ("drag_start".equals(kind)) dragEndRetryCount = 0;
+        String event = realtimeEvent(kind);
+        if (realtimeReady && realtimeClient != null && event.length() > 0
+                && realtimeClient.sendInput(event, dx, dy, delta, "", ++realtimeSequence)) {
+            if ("drag_end".equals(kind)) {
+                dragEndRetryScheduled = false;
+                dragEndRetryCount = 0;
+            }
+            if (feedback) FeedbackController.success(this);
+            return;
+        }
+        final boolean critical = "drag_start".equals(kind) || "drag_end".equals(kind);
+        boolean submitted = mouseQueue.submit(new NativeRequestQueue.Request() {
             @Override public P500ApiClient.Result run() {
                 return P500ApiClient.mouse(getApplicationContext(), kind, dx, dy, delta);
             }
-        }, feedback ? new NativeRequestQueue.Callback() {
+        }, (feedback || critical) ? new NativeRequestQueue.Callback() {
             @Override public void complete(P500ApiClient.Result result) {
                 runtimeTuner.record(result);
-                if (result.ok) FeedbackController.success(NativeCoreActivity.this);
-                else {
-                    FeedbackController.failure(NativeCoreActivity.this);
+                if (result.ok) {
+                    if ("drag_end".equals(kind)) {
+                        dragEndRetryScheduled = false;
+                        dragEndRetryCount = 0;
+                    }
+                    if (feedback) FeedbackController.success(NativeCoreActivity.this);
+                } else {
+                    if (feedback || critical) FeedbackController.failure(NativeCoreActivity.this);
                     commandText.setText("Миша: " + result.detail);
+                    if ("drag_end".equals(kind)) scheduleDragEndRetry();
                 }
             }
         } : null);
+        if (!submitted && "drag_end".equals(kind)) scheduleDragEndRetry();
+    }
+
+    private void scheduleDragEndRetry() {
+        if (destroyed || dragEndRetryScheduled || dragEndRetryCount >= 4) return;
+        dragEndRetryCount++;
+        dragEndRetryScheduled = true;
+        handler.postDelayed(new Runnable() {
+            @Override public void run() {
+                dragEndRetryScheduled = false;
+                if (!destroyed) sendMouse("drag_end", 0, 0, 0, true);
+            }
+        }, 180L);
+    }
+
+    private String realtimeEvent(String kind) {
+        if ("move".equals(kind)) return "m";
+        if ("left_click".equals(kind)) return "l";
+        if ("right_click".equals(kind)) return "r";
+        if ("double_click".equals(kind)) return "d";
+        if ("scroll".equals(kind)) return "s";
+        if ("drag_start".equals(kind)) return "h";
+        if ("drag_end".equals(kind)) return "u";
+        return "";
     }
 
     private void scheduleTouchFlush(long delayMs) {
         if (destroyed || mouseInFlight || touchFlushScheduled) return;
+        long delay = Math.max(0L, delayMs);
+        if (realtimeReady) {
+            long elapsed = System.currentTimeMillis() - lastMoveSentAt;
+            delay = Math.max(delay, Math.max(0L, touchIntervalMs - elapsed));
+        }
         touchFlushScheduled = true;
-        handler.postDelayed(touchFlushRunnable, Math.max(0L, delayMs));
+        handler.postDelayed(touchFlushRunnable, delay);
     }
 
     private void flushTouchMovement() {
@@ -690,7 +999,19 @@ public class NativeCoreActivity extends Activity {
             pendingDx -= dx;
             pendingDy -= dy;
         }
-        if (dx == 0 && dy == 0) return;
+        if (dx == 0 && dy == 0) {
+            finishPendingDragIfReady();
+            return;
+        }
+        if (realtimeReady && realtimeClient != null
+                && realtimeClient.sendInput("m", dx, dy, 0, "", ++realtimeSequence)) {
+            lastMoveSentAt = System.currentTimeMillis();
+            synchronized (this) {
+                if (pendingDx != 0 || pendingDy != 0) scheduleTouchFlush(touchIntervalMs);
+            }
+            finishPendingDragIfReady();
+            return;
+        }
         mouseInFlight = true;
         mouseQueue.submit(new NativeRequestQueue.Request() {
             @Override public P500ApiClient.Result run() {
@@ -699,6 +1020,7 @@ public class NativeCoreActivity extends Activity {
         }, new NativeRequestQueue.Callback() {
             @Override public void complete(P500ApiClient.Result result) {
                 mouseInFlight = false;
+                lastMoveSentAt = System.currentTimeMillis();
                 runtimeTuner.record(result);
                 touchIntervalMs = runtimeTuner.touchInterval(configuredTouchIntervalMs);
                 if (!result.ok) {
@@ -707,15 +1029,24 @@ public class NativeCoreActivity extends Activity {
                         pendingDy = 0;
                     }
                     commandText.setText("Тачпад: " + result.detail);
+                    finishPendingDragIfReady();
                 } else {
                     synchronized (NativeCoreActivity.this) {
-                        if (pendingDx != 0 || pendingDy != 0) {
-                            scheduleTouchFlush(touchIntervalMs);
-                        }
+                        if (pendingDx != 0 || pendingDy != 0) scheduleTouchFlush(touchIntervalMs);
                     }
+                    finishPendingDragIfReady();
                 }
             }
         });
+    }
+
+    private void finishPendingDragIfReady() {
+        boolean release;
+        synchronized (this) {
+            release = pendingDragEnd && !mouseInFlight && pendingDx == 0 && pendingDy == 0;
+            if (release) pendingDragEnd = false;
+        }
+        if (release) sendMouse("drag_end", 0, 0, 0, true);
     }
 
     private void showPage(int page) {
@@ -724,7 +1055,10 @@ public class NativeCoreActivity extends Activity {
         touchPage.setVisibility(page == PAGE_TOUCH ? View.VISIBLE : View.GONE);
         keysPage.setVisibility(page == PAGE_KEYS ? View.VISIBLE : View.GONE);
         morePage.setVisibility(page == PAGE_MORE ? View.VISIBLE : View.GONE);
+        monitorPage.setVisibility(page == PAGE_MONITOR ? View.VISIBLE : View.GONE);
         profileSpinner.setVisibility(page == PAGE_PANEL ? View.VISIBLE : View.GONE);
+        currentPage = page;
+        if (page == PAGE_MONITOR) requestMonitor(true);
         touchActivity();
     }
 
@@ -779,7 +1113,7 @@ public class NativeCoreActivity extends Activity {
     }
 
     private void applyWindowPreferences() {
-        if (AppPreferences.get(this).getBoolean(AppPreferences.FULLSCREEN, true)) {
+        if (AppPreferences.fullscreen(this)) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
         } else {
@@ -905,6 +1239,7 @@ public class NativeCoreActivity extends Activity {
             finish();
             return;
         }
+        connectRealtime();
         String key = AppPreferences.baseUrl(this) + "|" + AppPreferences.token(this);
         if (!key.equals(activeConnectionKey)) {
             activeConnectionKey = key;
@@ -917,10 +1252,21 @@ public class NativeCoreActivity extends Activity {
     }
 
     @Override protected void onPause() {
+        if (dragging) {
+            synchronized (this) { pendingDragEnd = true; }
+            dragging = false;
+            flushTouchMovement();
+            finishPendingDragIfReady();
+        }
         resumed = false;
         handler.removeCallbacks(statusRunnable);
         handler.removeCallbacks(touchFlushRunnable);
+        handler.removeCallbacks(singleTapRunnable);
         touchFlushScheduled = false;
+        handler.removeCallbacks(realtimeReconnectRunnable);
+        if (realtimeClient != null) realtimeClient.close();
+        realtimeClient = null;
+        realtimeReady = false;
         handler.removeCallbacks(dimRunnable);
         super.onPause();
     }
@@ -938,6 +1284,9 @@ public class NativeCoreActivity extends Activity {
 
     @Override protected void onDestroy() {
         destroyed = true;
+        handler.removeCallbacks(realtimeReconnectRunnable);
+        if (realtimeClient != null) realtimeClient.close();
+        realtimeClient = null;
         resumed = false;
         handler.removeCallbacksAndMessages(null);
         if (commandQueue != null) commandQueue.close();

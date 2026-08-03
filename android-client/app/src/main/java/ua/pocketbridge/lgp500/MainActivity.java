@@ -119,6 +119,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DeviceLayout.applyOrientation(this);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         handler = new Handler();
 
@@ -195,6 +196,8 @@ public class MainActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
+        settings.setLoadWithOverviewMode(DeviceLayout.isModern(this));
+        settings.setUseWideViewPort(DeviceLayout.isModern(this));
         settings.setSaveFormData(false);
         settings.setSavePassword(false);
         settings.setAppCacheEnabled(false);
@@ -488,7 +491,7 @@ public class MainActivity extends Activity {
 
     private void applyWindowPreferences() {
         SharedPreferences preferences = AppPreferences.get(this);
-        if (preferences.getBoolean(AppPreferences.FULLSCREEN, true)) {
+        if (AppPreferences.fullscreen(this)) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
         } else {

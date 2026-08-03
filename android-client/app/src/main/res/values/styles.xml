@@ -69,4 +69,27 @@
     <style name="CoreNavButtonYoutube" parent="@style/CoreNavButton">
         <item name="android:background">@drawable/button_youtube</item>
     </style>
+
+    <style name="CoreActionButtonModern" parent="@style/CoreActionButton">
+        <item name="android:layout_margin">5dp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:minHeight">64dp</item>
+        <item name="android:padding">6dp</item>
+    </style>
+
+    <style name="CoreMonitorRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">4dp</item>
+        <item name="android:background">@drawable/button_secondary</item>
+        <item name="android:padding">9dp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="CoreMonitorBlock" parent="CoreMonitorRow">
+        <item name="android:textSize">11sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
 </resources>

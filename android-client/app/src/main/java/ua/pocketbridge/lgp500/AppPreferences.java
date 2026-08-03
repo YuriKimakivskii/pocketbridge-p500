@@ -29,6 +29,9 @@ final class AppPreferences {
     static final String P500_LITE_MODE = "p500_lite_mode";
     static final String NATIVE_CORE_MODE = "native_core_mode";
     static final String ADAPTIVE_RUNTIME = "adaptive_runtime";
+    static final String DEVICE_LAYOUT = "device_layout";
+    static final String DEVICE_ROLE = "device_role";
+    static final String REALTIME_INPUT = "realtime_input";
 
     private AppPreferences() { }
 
@@ -63,15 +66,15 @@ final class AppPreferences {
     }
 
     static String fullPanelUrl(Context context) {
-        return baseUrl(context) + "/?token=" + encode(token(context)) + "&pb_client=android";
+        return baseUrl(context) + "/?token=" + urlEncode(token(context)) + "&pb_client=android";
     }
 
     static String litePanelUrl(Context context) {
-        return baseUrl(context) + "/p500/?token=" + encode(token(context)) + "&pb_client=android";
+        return baseUrl(context) + "/p500/?token=" + urlEncode(token(context)) + "&pb_client=android";
     }
 
     static boolean p500LiteMode(Context context) {
-        return get(context).getBoolean(P500_LITE_MODE, true);
+        return get(context).getBoolean(P500_LITE_MODE, !DeviceLayout.isModern(context));
     }
 
     static boolean nativeCoreMode(Context context) {
@@ -82,12 +85,31 @@ final class AppPreferences {
         return get(context).getBoolean(ADAPTIVE_RUNTIME, true);
     }
 
+    static String deviceRole(Context context) {
+        String value = get(context).getString(DEVICE_ROLE, "auto");
+        if ("station".equals(value) || "mobile".equals(value)) return value;
+        return DeviceLayout.isModern(context) ? "mobile" : "station";
+    }
+
+    static boolean realtimeInput(Context context) {
+        return get(context).getBoolean(REALTIME_INPUT, true);
+    }
+
     static String healthUrl(Context context) {
-        return baseUrl(context) + "/api/health?client_version=" + encode(BuildConfig.VERSION_NAME);
+        return baseUrl(context) + "/api/health?client_version=" + urlEncode(BuildConfig.VERSION_NAME);
     }
 
     static String sessionCheckUrl(Context context) {
-        return baseUrl(context) + "/api/session/check?client_version=" + encode(BuildConfig.VERSION_NAME);
+        return baseUrl(context) + "/api/session/check?client_version=" + urlEncode(BuildConfig.VERSION_NAME);
+    }
+
+
+    static boolean fullscreen(Context context) {
+        return get(context).getBoolean(FULLSCREEN, !DeviceLayout.isModern(context));
+    }
+
+    static boolean keepScreenOn(Context context) {
+        return get(context).getBoolean(KEEP_SCREEN_ON, true);
     }
 
     static boolean hardwareKeysEnabled(Context context) {
@@ -213,7 +235,7 @@ final class AppPreferences {
         return value;
     }
 
-    private static String encode(String value) {
+    static String urlEncode(String value) {
         try {
             return URLEncoder.encode(value == null ? "" : value, "UTF-8");
         } catch (UnsupportedEncodingException ignored) {

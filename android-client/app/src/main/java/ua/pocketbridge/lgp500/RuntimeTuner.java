@@ -17,6 +17,7 @@ final class RuntimeTuner {
 
     private final Context context;
     private final int memoryClassMb;
+    private final boolean modernDevice;
     private int tier;
     private boolean memoryPressure;
     private long latencyEwmaMs;
@@ -29,7 +30,8 @@ final class RuntimeTuner {
         this.context = context.getApplicationContext();
         ActivityManager manager = (ActivityManager) this.context.getSystemService(Context.ACTIVITY_SERVICE);
         memoryClassMb = manager == null ? 24 : Math.max(16, manager.getMemoryClass());
-        tier = memoryClassMb <= 24 ? TIER_ECO : (memoryClassMb <= 40 ? TIER_BALANCED : TIER_FAST);
+        modernDevice = DeviceLayout.isModern(this.context);
+        tier = modernDevice ? TIER_FAST : (memoryClassMb <= 24 ? TIER_ECO : (memoryClassMb <= 40 ? TIER_BALANCED : TIER_FAST));
         recomputeTier();
     }
 
@@ -57,14 +59,20 @@ final class RuntimeTuner {
     }
 
     int commandQueueCapacity() {
-        return tier == TIER_ECO ? 6 : (tier == TIER_BALANCED ? 9 : 12);
+        return modernDevice ? (tier == TIER_ECO ? 10 : (tier == TIER_BALANCED ? 16 : 24)) : (tier == TIER_ECO ? 6 : (tier == TIER_BALANCED ? 9 : 12));
     }
 
     int mouseQueueCapacity() {
-        return tier == TIER_ECO ? 2 : (tier == TIER_BALANCED ? 3 : 4);
+        return modernDevice ? (tier == TIER_ECO ? 4 : (tier == TIER_BALANCED ? 6 : 8)) : (tier == TIER_ECO ? 2 : (tier == TIER_BALANCED ? 3 : 4));
     }
 
     int touchInterval(int configuredMs) {
+        if (modernDevice) {
+            int base = clamp(configuredMs, 18, 120);
+            if (tier == TIER_ECO) return Math.max(base, 40);
+            if (tier == TIER_BALANCED) return Math.max(28, Math.min(base, 40));
+            return Math.max(18, Math.min(base, 28));
+        }
         int base = clamp(configuredMs, 35, 160);
         if (tier == TIER_ECO) return Math.max(base, 70);
         if (tier == TIER_BALANCED) return Math.max(base, 45);
@@ -75,6 +83,7 @@ final class RuntimeTuner {
         long base = idle ? Math.max(10000, idleMs) : Math.max(3000, activeMs);
         if (tier == TIER_ECO) return Math.min(60000L, Math.round(base * 1.6d));
         if (tier == TIER_BALANCED) return Math.min(45000L, Math.round(base * 1.15d));
+        if (modernDevice && !idle) return Math.max(2000L, Math.round(base * 0.65d));
         return base;
     }
 
@@ -91,7 +100,7 @@ final class RuntimeTuner {
         long usedMb = Math.max(0L, (runtime.totalMemory() - runtime.freeMemory()) / (1024L * 1024L));
         long maxMb = Math.max(1L, runtime.maxMemory() / (1024L * 1024L));
         String latency = latencyEwmaMs > 0 ? String.valueOf(latencyEwmaMs) + "мс" : "—";
-        return tierName() + " · heap " + usedMb + "/" + maxMb + "MB · " + latency
+        return (modernDevice ? "REDMI " : "P500 ") + tierName() + " · heap " + usedMb + "/" + maxMb + "MB · " + latency
                 + " · " + lastResponseBytes + "B";
     }
 

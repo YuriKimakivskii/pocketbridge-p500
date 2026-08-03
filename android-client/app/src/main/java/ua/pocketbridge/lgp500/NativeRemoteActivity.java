@@ -146,7 +146,7 @@ public class NativeRemoteActivity extends Activity {
     }
 
     private void applyWindowPreferences() {
-        if (AppPreferences.get(this).getBoolean(AppPreferences.FULLSCREEN, true)) {
+        if (AppPreferences.fullscreen(this)) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Буфер обміну"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/clipboard_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:background="@drawable/edit_background"
+        android:gravity="top|left"
+        android:hint="Текст із телефона або ПК"
+        android:inputType="textMultiLine|textCapSentences"
+        android:maxLength="8192"
+        android:padding="10dp"
+        android:scrollbars="vertical"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_secondary"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/clipboard_read_pc"
+            style="@style/CoreMoreButtonPrimary"
+            android:text="Зчитати з ПК" />
+
+        <Button
+            android:id="@+id/clipboard_send_pc"
+            style="@style/CoreMoreButtonPrimary"
+            android:text="У буфер ПК" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/clipboard_from_phone"
+            style="@style/CoreMoreButton"
+            android:text="Із телефона" />
+
+        <Button
+            android:id="@+id/clipboard_to_phone"
+            style="@style/CoreMoreButton"
+            android:text="У буфер телефона" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/clipboard_history"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/button_secondary"
+        android:maxLines="4"
+        android:padding="6dp"
+        android:text="Історія: —"
+        android:textColor="@color/text_secondary"
+        android:textSize="10sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/clipboard_clear"
+            style="@style/CoreKey"
+            android:text="Очистити поле" />
+
+        <Button
+            android:id="@+id/clipboard_close"
+            style="@style/CoreKey"
+            android:text="Назад" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/clipboard_status"
+        android:layout_width="match_parent"
+        android:layout_height="28dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="Готово"
+        android:textColor="@color/text_secondary"
+        android:textSize="9sp" />
+</LinearLayout>

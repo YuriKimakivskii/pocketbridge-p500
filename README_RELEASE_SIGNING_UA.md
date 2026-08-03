@@ -43,7 +43,7 @@ Settings → Secrets and variables → Actions → New repository secret
 Після цього workflow автоматично збере:
 
 ```text
-PocketBridge-Remote-LG-P500-v1.8.0-release.apk
+PocketBridge-Remote-MultiDevice-v2.3.1-release.apk
 ```
 
 Не додавай `.jks`, паролі або Base64-файл безпосередньо до репозиторію.

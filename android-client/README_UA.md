@@ -1,33 +1,34 @@
-# PocketBridge Remote 1.8.0 для LG P500
+# PocketBridge Remote 2.3.1
 
-Нативний Android-клієнт із підтримкою API 10.
+Нативний Android-клієнт для LG P500 і Redmi Note 9 Pro.
 
-## Екрани Native Core
+## Сумісність
 
-- **Панель** — профілі та програмовані кнопки.
-- **YT** — нативна панель YouTube з пошуком і керуванням відтворенням.
-- **Тач** — нативний тачпад, кліки й прокручування.
-- **Клав.** — комбінації клавіш і Unicode-текст.
-- **Ще** — WebView-інструменти, Wake-on-LAN, резервний пульт, налаштування й діагностика.
+```text
+minSdkVersion 10
+targetSdkVersion 28
+compileSdkVersion 30
+Java 7
+без AndroidX, Kotlin і Google Play Services
+```
 
-## Режими
+## Основні модулі
 
-- Native Core увімкнений за замовчуванням.
-- Ultra Lite Web UI лишається запасним режимом.
-- Повний WebView запускається лише вручну.
+- Native Core;
+- WebSocket-тачпад;
+- Remote Screen із monitor selector, auto refresh і кліками;
+- Clipboard Hub для Windows ↔ Android;
+- Native File Manager для upload/download і керування спільними папками;
+- YouTube, VLC і PowerPoint;
+- System Monitor;
+- Android Share to PC;
+- Wake-on-LAN;
+- full/Lite WebView як додаткові інструменти.
 
 ## Збірка
 
-Проєкт використовує Gradle, compileSdk 30, Build Tools 30.0.3, Java 7 і minSdk 10.
-
-Артефакт GitHub Actions:
+Використовуйте `.github/workflows/build-apk.yml`. Артефакт має назву:
 
 ```text
-PocketBridge-Remote-LG-P500-v1.8.0
-```
-
-Встановлення:
-
-```powershell
-adb install -r PocketBridge-Remote-LG-P500-v1.8.0-debug.apk
+PocketBridge-Remote-MultiDevice-v2.3.1
 ```

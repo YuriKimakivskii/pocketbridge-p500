@@ -28,7 +28,21 @@ final class NativeRequestQueue {
         try {
             executor.execute(new Runnable() {
                 @Override public void run() {
-                    final P500ApiClient.Result result = request.run();
+                    P500ApiClient.Result completed;
+                    try {
+                        completed = request.run();
+                        if (completed == null) {
+                            completed = new P500ApiClient.Result(
+                                    false, 0, 0L, null, "Команда не повернула результат");
+                        }
+                    } catch (Exception exception) {
+                        String detail = exception.getMessage();
+                        completed = new P500ApiClient.Result(
+                                false, 0, 0L, null,
+                                detail == null || detail.length() == 0
+                                        ? "Непередбачена помилка команди" : detail);
+                    }
+                    final P500ApiClient.Result result = completed;
                     if (callback != null && !closed) {
                         handler.post(new Runnable() {
                             @Override public void run() {

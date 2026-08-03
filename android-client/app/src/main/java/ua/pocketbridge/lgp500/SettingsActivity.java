@@ -23,6 +23,8 @@ import java.util.List;
 
 public class SettingsActivity extends Activity {
     private Spinner profileSpinner;
+    private Spinner deviceLayoutSpinner;
+    private Spinner deviceRoleSpinner;
     private EditText profileNameInput;
     private EditText hostInput;
     private EditText portInput;
@@ -34,6 +36,7 @@ public class SettingsActivity extends Activity {
     private CheckBox p500LiteCheck;
     private CheckBox nativeCoreCheck;
     private CheckBox adaptiveRuntimeCheck;
+    private CheckBox realtimeInputCheck;
     private CheckBox screenOnCheck;
     private CheckBox reconnectCheck;
     private CheckBox autostartCheck;
@@ -49,6 +52,7 @@ public class SettingsActivity extends Activity {
     private Button discoverButton;
     private Button pairButton;
     private Button wakeButton;
+    private Button wolDiagnosticsButton;
     private TextView diagnosticsSummary;
     private List<PcProfile> profiles = new ArrayList<PcProfile>();
     private boolean loadingProfile;
@@ -66,6 +70,8 @@ public class SettingsActivity extends Activity {
 
     private void bindViews() {
         profileSpinner = (Spinner) findViewById(R.id.profile_spinner);
+        deviceLayoutSpinner = (Spinner) findViewById(R.id.device_layout_spinner);
+        deviceRoleSpinner = (Spinner) findViewById(R.id.device_role_spinner);
         profileNameInput = (EditText) findViewById(R.id.profile_name_input);
         hostInput = (EditText) findViewById(R.id.host_input);
         portInput = (EditText) findViewById(R.id.port_input);
@@ -77,6 +83,7 @@ public class SettingsActivity extends Activity {
         p500LiteCheck = (CheckBox) findViewById(R.id.p500_lite_check);
         nativeCoreCheck = (CheckBox) findViewById(R.id.native_core_check);
         adaptiveRuntimeCheck = (CheckBox) findViewById(R.id.adaptive_runtime_check);
+        realtimeInputCheck = (CheckBox) findViewById(R.id.realtime_input_check);
         screenOnCheck = (CheckBox) findViewById(R.id.screen_on_check);
         reconnectCheck = (CheckBox) findViewById(R.id.reconnect_check);
         autostartCheck = (CheckBox) findViewById(R.id.autostart_check);
@@ -92,7 +99,19 @@ public class SettingsActivity extends Activity {
         discoverButton = (Button) findViewById(R.id.discover_button);
         pairButton = (Button) findViewById(R.id.pair_button);
         wakeButton = (Button) findViewById(R.id.wake_button);
+        wolDiagnosticsButton = (Button) findViewById(R.id.wol_diagnostics_button);
         diagnosticsSummary = (TextView) findViewById(R.id.diagnostics_summary);
+
+        ArrayAdapter<String> deviceAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item,
+                new String[] {"Авто", "LG Optimus One P500", "Redmi Note 9 Pro / сучасний HD"});
+        deviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        deviceLayoutSpinner.setAdapter(deviceAdapter);
+        ArrayAdapter<String> roleAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item,
+                new String[] {"Автоматично", "Стаціонарна панель", "Мобільний пульт"});
+        roleAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        deviceRoleSpinner.setAdapter(roleAdapter);
 
         profileSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -120,6 +139,9 @@ public class SettingsActivity extends Activity {
         wakeButton.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) { wakeComputer(); }
         });
+        wolDiagnosticsButton.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { runWolDiagnostics(); }
+        });
         testButton.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) { testConnection(); }
         });
@@ -134,14 +156,27 @@ public class SettingsActivity extends Activity {
         ((Button) findViewById(R.id.export_diagnostics_button)).setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View view) { exportDiagnostics(); }
         });
+        ((Button) findViewById(R.id.open_autostart_button)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { SystemSettingsHelper.openAutostart(SettingsActivity.this); }
+        });
+        ((Button) findViewById(R.id.open_battery_button)).setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View view) { SystemSettingsHelper.openBattery(SettingsActivity.this); }
+        });
     }
 
     private void loadGlobalValues() {
         SharedPreferences preferences = AppPreferences.get(this);
-        fullscreenCheck.setChecked(preferences.getBoolean(AppPreferences.FULLSCREEN, true));
-        p500LiteCheck.setChecked(preferences.getBoolean(AppPreferences.P500_LITE_MODE, true));
+        fullscreenCheck.setChecked(AppPreferences.fullscreen(this));
+        String deviceMode = preferences.getString(AppPreferences.DEVICE_LAYOUT, DeviceLayout.AUTO);
+        deviceLayoutSpinner.setSelection(DeviceLayout.P500.equals(deviceMode) ? 1 : (DeviceLayout.MODERN.equals(deviceMode) ? 2 : 0));
+        String deviceRole = preferences.getString(AppPreferences.DEVICE_ROLE, "auto");
+        deviceRoleSpinner.setSelection("station".equals(deviceRole) ? 1 : ("mobile".equals(deviceRole) ? 2 : 0));
+        boolean modernAutoMigration = !preferences.contains(AppPreferences.DEVICE_LAYOUT) && DeviceLayout.isModern(this);
+        p500LiteCheck.setChecked(modernAutoMigration ? false
+                : preferences.getBoolean(AppPreferences.P500_LITE_MODE, !DeviceLayout.isModern(this)));
         nativeCoreCheck.setChecked(preferences.getBoolean(AppPreferences.NATIVE_CORE_MODE, true));
         adaptiveRuntimeCheck.setChecked(preferences.getBoolean(AppPreferences.ADAPTIVE_RUNTIME, true));
+        realtimeInputCheck.setChecked(preferences.getBoolean(AppPreferences.REALTIME_INPUT, true));
         screenOnCheck.setChecked(preferences.getBoolean(AppPreferences.KEEP_SCREEN_ON, true));
         reconnectCheck.setChecked(preferences.getBoolean(AppPreferences.AUTO_RECONNECT, true));
         autostartCheck.setChecked(preferences.getBoolean(AppPreferences.AUTO_START, false));
@@ -228,10 +263,18 @@ public class SettingsActivity extends Activity {
                 idleBrightnessInput.getText().toString(), 20, 1, 100);
         int idleSeconds = AppPreferences.parseBoundedInt(
                 idleTimeoutInput.getText().toString(), 60, 0, 3600);
+        String deviceMode = DeviceLayout.AUTO;
+        int devicePosition = deviceLayoutSpinner.getSelectedItemPosition();
+        if (devicePosition == 1) deviceMode = DeviceLayout.P500;
+        else if (devicePosition == 2) deviceMode = DeviceLayout.MODERN;
+        String deviceRole = selectedDeviceRole();
         AppPreferences.get(this).edit()
+                .putString(AppPreferences.DEVICE_LAYOUT, deviceMode)
+                .putString(AppPreferences.DEVICE_ROLE, deviceRole)
                 .putBoolean(AppPreferences.P500_LITE_MODE, p500LiteCheck.isChecked())
                 .putBoolean(AppPreferences.NATIVE_CORE_MODE, nativeCoreCheck.isChecked())
                 .putBoolean(AppPreferences.ADAPTIVE_RUNTIME, adaptiveRuntimeCheck.isChecked())
+                .putBoolean(AppPreferences.REALTIME_INPUT, realtimeInputCheck.isChecked())
                 .putBoolean(AppPreferences.FULLSCREEN, fullscreenCheck.isChecked())
                 .putBoolean(AppPreferences.KEEP_SCREEN_ON, screenOnCheck.isChecked())
                 .putBoolean(AppPreferences.AUTO_RECONNECT, reconnectCheck.isChecked())
@@ -246,6 +289,14 @@ public class SettingsActivity extends Activity {
                 .putInt(AppPreferences.IDLE_DIM_SECONDS, idleSeconds)
                 .commit();
         LauncherMode.setEnabled(this, launcherModeCheck.isChecked());
+    }
+
+
+    private String selectedDeviceRole() {
+        int rolePosition = deviceRoleSpinner.getSelectedItemPosition();
+        if (rolePosition == 1) return "station";
+        if (rolePosition == 2) return "mobile";
+        return DeviceLayout.isModern(this) ? "mobile" : "station";
     }
 
     private void saveAndConnect() {
@@ -331,7 +382,7 @@ public class SettingsActivity extends Activity {
         pairButton.setText("Парування…");
         new AsyncTask<Void, Void, PairingClient.Result>() {
             @Override protected PairingClient.Result doInBackground(Void... values) {
-                return PairingClient.claim(profile.host, profile.port, code, profile.name);
+                return PairingClient.claim(profile.host, profile.port, code, profile.name, selectedDeviceRole());
             }
             @Override protected void onPostExecute(PairingClient.Result result) {
                 if (destroyed) { return; }
@@ -370,6 +421,49 @@ public class SettingsActivity extends Activity {
                 if (destroyed) { return; }
                 wakeButton.setEnabled(true);
                 Toast.makeText(SettingsActivity.this, result, Toast.LENGTH_LONG).show();
+            }
+        }.execute();
+    }
+
+    private void runWolDiagnostics() {
+        PcProfile profile = currentProfile(true);
+        if (profile == null) return;
+        PcProfileStore.save(this, profile, true);
+        wolDiagnosticsButton.setEnabled(false);
+        wolDiagnosticsButton.setText("Перевіряю…");
+        new AsyncTask<Void, Void, P500ApiClient.Result>() {
+            @Override protected P500ApiClient.Result doInBackground(Void... values) {
+                return P500ApiClient.wolDiagnostics(getApplicationContext());
+            }
+            @Override protected void onPostExecute(P500ApiClient.Result result) {
+                if (destroyed) return;
+                wolDiagnosticsButton.setEnabled(true);
+                wolDiagnosticsButton.setText("Діагностика Wake-on-LAN");
+                StringBuilder message = new StringBuilder();
+                message.append(result.detail);
+                if (result.ok) {
+                    message.append("\n\nS3: ").append(result.data.optBoolean("sleep_s3", false) ? "так" : "ні");
+                    message.append("\nEthernet wake armed: ").append(result.data.optBoolean("ethernet_wake_armed", false) ? "так" : "ні");
+                    org.json.JSONArray adapters = result.data.optJSONArray("ethernet");
+                    if (adapters != null && adapters.length() > 0) {
+                        JSONObject adapter = adapters.optJSONObject(0);
+                        if (adapter != null) {
+                            message.append("\nАдаптер: ").append(adapter.optString("description", adapter.optString("name", "")));
+                            message.append("\nMAC: ").append(adapter.optString("mac", ""));
+                            message.append("\nЛінк: ").append(adapter.optString("status", ""));
+                        }
+                    }
+                    org.json.JSONArray tips = result.data.optJSONArray("recommendations");
+                    if (tips != null && tips.length() > 0) {
+                        message.append("\n\nРекомендації:");
+                        for (int i = 0; i < tips.length(); i++) message.append("\n• ").append(tips.optString(i));
+                    }
+                }
+                new AlertDialog.Builder(SettingsActivity.this)
+                        .setTitle("Wake-on-LAN")
+                        .setMessage(message.toString())
+                        .setPositiveButton("Гаразд", null)
+                        .show();
             }
         }.execute();
     }

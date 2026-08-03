@@ -26,7 +26,7 @@ final class PairingClient {
 
     private PairingClient() { }
 
-    static Result claim(String host, int port, String code, String name) {
+    static Result claim(String host, int port, String code, String name, String deviceRole) {
         HttpURLConnection connection = null;
         try {
             URL url = new URL("http://" + host + ":" + port + "/api/pairing/claim");
@@ -41,6 +41,7 @@ final class PairingClient {
             body.put("device_name", name);
             body.put("client_version", BuildConfig.VERSION_NAME);
             body.put("model", Build.MANUFACTURER + " " + Build.MODEL);
+            body.put("device_role", deviceRole == null ? "auto" : deviceRole);
             byte[] encoded = body.toString().getBytes("UTF-8");
             OutputStream output = connection.getOutputStream();
             output.write(encoded);

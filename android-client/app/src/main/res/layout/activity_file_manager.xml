@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical"
+    android:padding="6dp">
+
+    <TextView
+        android:id="@+id/files_path"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:background="@drawable/button_secondary"
+        android:ellipsize="middle"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:text="Спільні файли"
+        android:textColor="@color/text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal">
+        <Button android:id="@+id/files_up" style="@style/CoreMoreButton" android:text="↑ Назад" />
+        <Button android:id="@+id/files_refresh" style="@style/CoreMoreButtonPrimary" android:text="Оновити" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal">
+        <Button android:id="@+id/files_upload" style="@style/CoreMoreButtonPrimary" android:text="↑ На ПК" />
+        <Button android:id="@+id/files_new_folder" style="@style/CoreMoreButton" android:text="+ Папка" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/files_status"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="2"
+        android:text="Завантаження…"
+        android:textColor="@color/text_secondary"
+        android:textSize="10sp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+        <LinearLayout
+            android:id="@+id/files_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+</LinearLayout>

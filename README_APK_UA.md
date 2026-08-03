@@ -1,49 +1,34 @@
-# APK-клієнт PocketBridge Remote 1.8.0
+# APK PocketBridge Remote 2.3.1
 
-Android-клієнт створений для LG Optimus One P500, Android 2.3.3 / API 10 і CyanogenMod 7.2.
+Один APK підтримує LG Optimus One P500 (Android 2.3/API 10) і Redmi Note 9 Pro.
 
-## Native Core
+## Виправлено у 2.3.1
 
-Версія 1.8.0 за замовчуванням не завантажує WebView. Головна панель, окрема вкладка YouTube, профілі, тачпад, клавіатура, статус ПК, Wake-on-LAN і фізичні кнопки реалізовані нативно на Java.
-
-Переваги для P500:
-
-- менше використання RAM;
-- швидший перший екран;
-- менше пауз збирача сміття;
-- відсутність великого HTML DOM у фоновому режимі;
-- кеш профілів у SharedPreferences;
-- обмежені черги мережевих команд;
-- адаптивне опитування статусу;
-- тачпад надсилає об’єднані рухи, а не кожну подію.
-
-## YouTube
-
-Вкладка `YT` містить пошук, Play/Pause, ±10 секунд, попереднє/наступне відео, гучність, Mute, субтитри, повний екран, театр і швидкість.
-
-## Сумісність
-
-```text
-minSdkVersion 10
-versionCode 18
-versionName 1.8.0
-сервер 1.4.0 / API 7
-Java 7
-без AndroidX, Kotlin і Google Play Services
-```
+- порядок останнього руху та завершення перетягування у HTTP fallback;
+- повторне надсилання `drag_end`, коли черга тимчасово переповнена;
+- об’єднання realtime-рухів без втрати кліків і меж drag;
+- клік по кадру завжди надсилається на монітор, з якого отриманий кадр;
+- захист LG P500 від аварійного завершення при нестачі RAM для JPEG;
+- безпечне завантаження через `.part` із перевіркою повного розміру;
+- обмеження JSON-відповіді до 512 КіБ;
+- автоматичне виправлення зарезервованих Windows-імен файлів;
+- обробка непередбаченої помилки фонової команди без зависання UI;
+- підтримка до 12 профілів панелей.
 
 ## Збірка
 
-Workflow: `.github/workflows/build-apk.yml`.
+```text
+GitHub → Actions → Build PocketBridge APK → Run workflow
+```
+
+Артефакт:
 
 ```text
-Actions → Build PocketBridge APK → Run workflow
+PocketBridge-Remote-MultiDevice-v2.3.1
 ```
 
-## Встановлення
+Установлення:
 
 ```powershell
-adb install -r PocketBridge-Remote-LG-P500-v1.8.0-debug.apk
+adb install -r PocketBridge-Remote-MultiDevice-v2.3.1-debug.apk
 ```
-
-Для оновлень без видалення APK використовуй один постійний release-ключ.
