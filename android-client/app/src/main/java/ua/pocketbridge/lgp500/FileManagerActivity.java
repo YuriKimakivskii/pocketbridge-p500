@@ -1,6 +1,7 @@
 package ua.pocketbridge.lgp500;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
@@ -22,7 +23,6 @@ import android.widget.Toast;
 import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import android.annotation.TargetApi;
 
 public final class FileManagerActivity extends Activity {
     private static final int REQUEST_PICK_FILE = 4101;
@@ -384,6 +384,7 @@ public final class FileManagerActivity extends Activity {
     }
 
 
+    @TargetApi(Build.VERSION_CODES.M)
     private static final class StoragePermissionApi23 {
         private StoragePermissionApi23() { }
 
@@ -409,24 +410,5 @@ public final class FileManagerActivity extends Activity {
         double mib = kib / 1024.0;
         if (mib < 1024.0) return String.format(Locale.US, "%.1f МіБ", mib);
         return String.format(Locale.US, "%.2f ГіБ", mib / 1024.0);
-    }
-    
-    @TargetApi(Build.VERSION_CODES.M)
-    private static final class StoragePermissionApi23 {
-    private StoragePermissionApi23() { }
-
-    static boolean hasWritePermission(Activity activity) {
-        return activity.checkSelfPermission(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
-    static void requestWritePermission(Activity activity, int requestCode) {
-        activity.requestPermissions(
-                new String[] {
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                },
-                requestCode);
-    }
     }
 }
