@@ -20,6 +20,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.json.JSONObject;
 
 public class SettingsActivity extends Activity {
     private Spinner profileSpinner;
